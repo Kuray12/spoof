@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Download + Orientation Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      text-align: center;
+    }
+
+    .box {
+      height: 200vh;
+      background: linear-gradient(white, gray);
+    }
+
+    button {
+      padding: 15px;
+      font-size: 18px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Download + Orientation Change Test</h2>
+<button onclick="startTest()">Start Test</button>
+
+<div class="box"></div>
+
+<script>
+function startTest() {
+
+  // Step 1: trigger download
+  let a = document.createElement('a');
+  a.download = "verylong_꧁꧁꧁꧁꧁꧁꧁꧁꧁꧁_file.txt";
+  a.href = "data:text/plain,This is a test file";
+  a.click();
+
+  // Step 2: force layout change (simulate orientation effect)
+  setTimeout(() => {
+    document.body.style.width = "200vw";
+    document.body.style.transform = "rotate(90deg)";
+    document.body.style.transformOrigin = "left top";
+  }, 100);
+
+  // Step 3: revert (biar keliatan glitch kalau ada)
+  setTimeout(() => {
+    document.body.style.transform = "rotate(0deg)";
+    document.body.style.width = "100vw";
+  }, 1000);
+}
+</script>
+
+</body>
+</html>
