@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Fake Address Bar (Stable)</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: sans-serif;
+    padding-bottom: 80px;
+  }
+
+  button {
+    padding: 12px 18px;
+    font-size: 16px;
+    margin: 12px;
+  }
+
+  .hint {
+    text-align: center;
+    color: #666;
+    margin-top: 20px;
+  }
+
+  .spacer {
+    height: 900px;
+  }
+
+  textarea {
+    width: 100%;
+    font-size: 18px;
+    padding: 12px;
+    box-sizing: border-box;
+  }
+
+  /* 🔻 Fake address bar (STABLE VERSION) */
+  .fake-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #fff7f0;
+    border-top: 1px solid #e0cbb0;
+    text-align: center;
+    font-size: 15px;
+    padding: 12px 10px;
+    z-index: 9999;
+
+    /* safe animation */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+  }
+
+  .fake-bar.show {
+    opacity: 1;
+    visibility: visible;
+  }
+</style>
+</head>
+
+<body>
+
+<button id="scrollBtn">Scroll Down</button>
+
+<div class="hint">
+  Scroll, click textarea, or start typing
+</div>
+
+<div class="spacer"></div>
+
+<textarea id="ta" placeholder="Tap here to type..."></textarea>
+
+<div class="spacer"></div>
+
+<!-- 🔻 Fake address bar -->
+<div class="fake-bar" id="fakeBar">https://google.com/search</div>
+
+<script>
+const fakeBar = document.getElementById("fakeBar");
+const ta = document.getElementById("ta");
+
+/* =========================
+   SHOW / HIDE FUNCTIONS
+========================= */
+function showBar() {
+  fakeBar.classList.add("show");
+}
+
+function hideBar() {
+  fakeBar.classList.remove("show");
+}
+
+/* =========================
+   SAFE TRIGGERS (ALL BROWSERS)
+========================= */
+
+// 1. focus
+ta.addEventListener("focus", showBar);
+
+// 2. click (Firefox sometimes better here)
+ta.addEventListener("click", showBar);
+
+// 3. typing trigger (most reliable UX)
+ta.addEventListener("input", showBar);
+
+// 4. touch (mobile fix)
+ta.addEventListener("touchstart", showBar);
+
+// 5. blur hide
+ta.addEventListener("blur", hideBar);
+
+/* =========================
+   SCROLL DEMO
+========================= */
+document.getElementById("scrollBtn").onclick = () => {
+  window.scrollTo({
+    top: 600,
+    behavior: "smooth"
+  });
+};
+
+/* =========================
+   FORCE FIX FOR FIREFOX / EDGE CASES
+========================= */
+
+// jika user langsung scroll lalu interact
+document.addEventListener("scroll", () => {
+  if (document.activeElement === ta) {
+    showBar();
+  }
+});
+
+/* fallback safety: ensure working */
+setTimeout(() => {
+  // debug mode visual test
+  console.log("Fake bar system ready");
+}, 500);
+</script>
+
+</body>
+</html>
