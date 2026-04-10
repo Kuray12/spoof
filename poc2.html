@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bottom Fake Address Bar</title>
+<title>Smart Fake Address Bar</title>
 
 <style>
   body {
     margin: 0;
     font-family: sans-serif;
-    padding-bottom: 60px; /* ruang untuk bottom bar */
+    padding-bottom: 60px; /* ruang bottom bar */
   }
 
   button {
@@ -56,32 +56,24 @@
     opacity: 1;
     transform: translateY(0);
   }
-
-  .content {
-    padding-top: 20px;
-  }
 </style>
 </head>
 
 <body>
 
-<div class="content">
+<button id="scrollBtn">Scroll Down</button>
 
-  <button id="scrollBtn">Scroll Down</button>
-
-  <div class="hint">
-    Scroll or tap the field below…
-  </div>
-
-  <div class="spacer"></div>
-
-  <textarea id="ta" placeholder="Tap here to type..."></textarea>
-
-  <div class="spacer"></div>
-
+<div class="hint">
+  Scroll down, then tap the text area
 </div>
 
-<!-- 🔻 Fake address bar (BOTTOM) -->
+<div class="spacer"></div>
+
+<textarea id="ta" placeholder="Tap here to type..."></textarea>
+
+<div class="spacer"></div>
+
+<!-- 🔻 Fake address bar -->
 <div class="fake-bar" id="fakeBar">google.com</div>
 
 <script>
@@ -102,7 +94,7 @@ function hideFakeBar() {
   fakeBar.classList.remove("show");
 }
 
-/* scroll behavior (natural UX) */
+/* scroll hanya visual */
 document.getElementById("scrollBtn").onclick = () => {
   window.scrollTo({
     top: 600,
@@ -110,18 +102,16 @@ document.getElementById("scrollBtn").onclick = () => {
   });
 };
 
-/* focus behavior */
-ta.addEventListener("focus", showFakeBar);
-ta.addEventListener("blur", hideFakeBar);
-
-/* scroll-trigger feel */
-window.addEventListener("scroll", () => {
-  if (window.scrollY > 200) {
-    showFakeBar();
-  }
+/* 🔥 IMPORTANT: fake bar hanya muncul saat textarea fokus */
+ta.addEventListener("focus", () => {
+  showFakeBar();
 });
 
-/* Opera Mini fallback */
+ta.addEventListener("blur", () => {
+  hideFakeBar();
+});
+
+/* fallback Opera Mini */
 if (isOperaMini) {
   document.getElementById("scrollBtn").onclick = () => {
     ta.focus();
