@@ -2,29 +2,13 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Smart Fake Address Bar (Stable)</title>
+<title>Fake Bar Above Keyboard</title>
 
 <style>
   body {
     margin: 0;
     font-family: sans-serif;
-    padding-bottom: 80px;
-  }
-
-  button {
-    padding: 12px 18px;
-    font-size: 16px;
-    margin: 12px;
-  }
-
-  .hint {
-    text-align: center;
-    color: #666;
-    margin-top: 20px;
-  }
-
-  .spacer {
-    height: 900px;
+    padding-bottom: 120px;
   }
 
   textarea {
@@ -34,23 +18,26 @@
     box-sizing: border-box;
   }
 
-  /* 🔻 Fake address bar (STABLE VERSION) */
+  .spacer { height: 800px; }
+
+  /* 🔻 Fake bar */
   .fake-bar {
     position: fixed;
-    bottom: 0;
     left: 0;
     width: 100%;
+    bottom: 0;
+
     background: #fff7f0;
     border-top: 1px solid #e0cbb0;
     text-align: center;
     font-size: 15px;
-    padding: 12px 10px;
-    z-index: 9999;
+    padding: 12px;
 
-    /* safe animation */
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.2s ease;
+    transition: all 0.2s ease;
+
+    z-index: 9999;
   }
 
   .fake-bar.show {
@@ -62,27 +49,20 @@
 
 <body>
 
-<button id="scrollBtn">Scroll Down</button>
-
-<div class="hint">
-  Scroll, click textarea, or start typing
-</div>
+<textarea id="ta" placeholder="Tap here..."></textarea>
 
 <div class="spacer"></div>
 
-<textarea id="ta" placeholder="Tap here to type..."></textarea>
-
-<div class="spacer"></div>
-
-<!-- 🔻 Fake address bar -->
 <div class="fake-bar" id="fakeBar">https://google.com/search</div>
 
 <script>
 const fakeBar = document.getElementById("fakeBar");
 const ta = document.getElementById("ta");
 
+let keyboardHeight = 0;
+
 /* =========================
-   SHOW / HIDE FUNCTIONS
+   SHOW / HIDE
 ========================= */
 function showBar() {
   fakeBar.classList.add("show");
@@ -93,50 +73,44 @@ function hideBar() {
 }
 
 /* =========================
-   SAFE TRIGGERS (ALL BROWSERS)
+   KEYBOARD DETECTION (IMPORTANT)
 ========================= */
+function updateKeyboard() {
+  if (!window.visualViewport) return;
 
-// 1. focus
+  const vv = window.visualViewport;
+
+  // tinggi keyboard = selisih viewport
+  keyboardHeight = window.innerHeight - vv.height - vv.offsetTop;
+
+  if (keyboardHeight < 0) keyboardHeight = 0;
+
+  // geser bar ke atas keyboard
+  fakeBar.style.transform = `translateY(-${keyboardHeight}px)`;
+}
+
+/* =========================
+   EVENTS
+========================= */
 ta.addEventListener("focus", showBar);
-
-// 2. click (Firefox sometimes better here)
 ta.addEventListener("click", showBar);
-
-// 3. typing trigger (most reliable UX)
 ta.addEventListener("input", showBar);
 
-// 4. touch (mobile fix)
-ta.addEventListener("touchstart", showBar);
-
-// 5. blur hide
 ta.addEventListener("blur", hideBar);
 
 /* =========================
-   SCROLL DEMO
+   LISTEN KEYBOARD RESIZE
 ========================= */
-document.getElementById("scrollBtn").onclick = () => {
-  window.scrollTo({
-    top: 600,
-    behavior: "smooth"
-  });
-};
+if (window.visualViewport) {
+  visualViewport.addEventListener("resize", updateKeyboard);
+  visualViewport.addEventListener("scroll", updateKeyboard);
+}
 
-/* =========================
-   FORCE FIX FOR FIREFOX / EDGE CASES
-========================= */
+/* fallback */
+window.addEventListener("resize", updateKeyboard);
 
-// jika user langsung scroll lalu interact
-document.addEventListener("scroll", () => {
-  if (document.activeElement === ta) {
-    showBar();
-  }
-});
-
-/* fallback safety: ensure working */
-setTimeout(() => {
-  // debug mode visual test
-  console.log("Fake bar system ready");
-}, 500);
+/* init */
+updateKeyboard();
 </script>
 
 </body>
