@@ -2,141 +2,139 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scroll Fullscreen Simulation</title>
+<title>Realistic Scroll UX Demo</title>
 
 <style>
-  body { margin: 0; font-family: sans-serif; }
+  body {
+    margin: 0;
+    font-family: sans-serif;
+  }
 
   button {
     padding: 12px 18px;
     font-size: 16px;
-    margin: 10px;
+    margin: 12px;
+  }
+
+  .hint {
+    text-align: center;
+    color: #666;
+    margin-top: 20px;
+  }
+
+  .spacer {
+    height: 900px;
   }
 
   textarea {
     width: 100%;
     font-size: 18px;
-    padding: 10px;
-    margin-top: 20px;
+    padding: 12px;
     box-sizing: border-box;
   }
 
   .fake-bar {
-    text-align: center;
-    background: #fff7f0;
-    border-top: 1px solid #e0cbb0;
-    border-bottom: 1px solid #e0cbb0;
-    color: #222;
-    font-size: 16px;
-    padding: 5px 0;
     position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
+    background: #fff7f0;
+    border-bottom: 1px solid #e0cbb0;
+    text-align: center;
+    font-size: 16px;
+    padding: 6px 0;
     z-index: 9999;
+
     opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, bottom 0.2s ease;
+    transform: translateY(-10px);
+    transition: 0.25s ease;
   }
 
   .fake-bar.show {
     opacity: 1;
-    visibility: visible;
+    transform: translateY(0);
   }
 
-  .spacer { height: 900px; }
-
+  .content {
+    padding-top: 60px;
+  }
 </style>
 </head>
 
 <body>
 
-<button id="showBtn">Show Keyboard</button>
+<div class="fake-bar" id="fakeBar">google.com</div>
 
-<textarea id="ta" placeholder="Textarea at top…"></textarea>
+<div class="content">
 
-<div class="fake-bar" id="fakeBar">facebook.com</div>
+  <button id="scrollBtn">Scroll Down</button>
 
-<div class="spacer"></div>
+  <div class="hint">
+    Scroll or tap to continue…
+  </div>
 
-<textarea id="middleTa" placeholder="Textarea in middle…"></textarea>
+  <div class="spacer"></div>
+
+  <textarea id="ta" placeholder="Tap here to type..."></textarea>
+
+  <div class="spacer"></div>
+
+</div>
 
 <script>
-const fakeBar = document.getElementById('fakeBar');
-const ta = document.getElementById('ta');
-const middleTa = document.getElementById('middleTa');
+const fakeBar = document.getElementById("fakeBar");
+const ta = document.getElementById("ta");
 
 /* detect Opera Mini */
 const isOperaMini =
   Object.prototype.toString.call(window.operamini) === "[object OperaMini]" ||
   navigator.userAgent.includes("Opera Mini");
 
-/* adjust fake bar */
-function adjustFakeBar() {
-  if (isOperaMini) {
-    fakeBar.style.bottom = "0px";
-    return;
-  }
-
-  const vv = window.visualViewport;
-  if (!vv) return;
-
-  const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop;
-  fakeBar.style.bottom = keyboardHeight + "px";
-}
-
-/* show / hide */
+/* show / hide fake bar */
 function showFakeBar() {
   fakeBar.classList.add("show");
-  adjustFakeBar();
 }
 
 function hideFakeBar() {
   fakeBar.classList.remove("show");
 }
 
-/* 🎯 main behavior (scroll-based) */
-document.getElementById("showBtn").onclick = () => {
+/* smooth scroll behavior */
+document.getElementById("scrollBtn").onclick = () => {
 
-  if (isOperaMini) {
-    // fallback sederhana
-    ta.focus();
-    showFakeBar();
-    return;
-  }
-
-  // scroll untuk “hide URL bar”
   window.scrollTo({
     top: 600,
     behavior: "smooth"
   });
 
-  // setelah scroll, fokus
-  setTimeout(() => {
-    ta.focus();
-    showFakeBar();
-  }, 300);
+  // jangan auto-focus (biar natural)
 };
 
-/* focus events */
+/* show fake bar saat input focus */
 ta.addEventListener("focus", showFakeBar);
-middleTa.addEventListener("focus", showFakeBar);
-
 ta.addEventListener("blur", hideFakeBar);
-middleTa.addEventListener("blur", hideFakeBar);
 
-/* viewport resize */
-if (!isOperaMini && window.visualViewport) {
-  window.visualViewport.addEventListener("resize", () => {
-    if (
-      document.activeElement === ta ||
-      document.activeElement === middleTa
-    ) {
-      adjustFakeBar();
-    }
-  });
+/* optional: detect scroll interaction */
+let lastScroll = 0;
+
+window.addEventListener("scroll", () => {
+  const current = window.scrollY;
+
+  // show fake bar saat user sudah “masuk area interaction”
+  if (current > 200) {
+    showFakeBar();
+  }
+
+  lastScroll = current;
+});
+
+/* Opera Mini fallback */
+if (isOperaMini) {
+  document.getElementById("scrollBtn").onclick = () => {
+    ta.focus();
+    showFakeBar();
+  };
 }
-
-/* orientation */
-window.addEventListener("orientationchange", adjustFakeBar);
 </script>
 
 </body>
