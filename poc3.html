@@ -2,13 +2,28 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fake Bar Above Keyboard</title>
+<title>Fake Address Bar + Scroll + Keyboard Safe</title>
 
 <style>
   body {
     margin: 0;
     font-family: sans-serif;
-    padding-bottom: 120px;
+  }
+
+  button {
+    margin: 12px;
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+
+  .hint {
+    text-align: center;
+    color: #666;
+    padding: 10px;
+  }
+
+  .spacer {
+    height: 900px;
   }
 
   textarea {
@@ -18,14 +33,12 @@
     box-sizing: border-box;
   }
 
-  .spacer { height: 800px; }
-
   /* 🔻 Fake bar */
   .fake-bar {
     position: fixed;
     left: 0;
-    width: 100%;
     bottom: 0;
+    width: 100%;
 
     background: #fff7f0;
     border-top: 1px solid #e0cbb0;
@@ -35,7 +48,7 @@
 
     opacity: 0;
     visibility: hidden;
-    transition: all 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease;
 
     z-index: 9999;
   }
@@ -49,7 +62,15 @@
 
 <body>
 
-<textarea id="ta" placeholder="Tap here..."></textarea>
+<button id="scrollBtn">Scroll ke Input</button>
+
+<div class="hint">
+  Scroll dulu, baru ketemu input
+</div>
+
+<div class="spacer"></div>
+
+<textarea id="ta" placeholder="Mulai ngetik di sini..."></textarea>
 
 <div class="spacer"></div>
 
@@ -58,11 +79,12 @@
 <script>
 const fakeBar = document.getElementById("fakeBar");
 const ta = document.getElementById("ta");
+const scrollBtn = document.getElementById("scrollBtn");
 
-let keyboardHeight = 0;
+let keyboardOffset = 0;
 
 /* =========================
-   SHOW / HIDE
+   SHOW / HIDE BAR
 ========================= */
 function showBar() {
   fakeBar.classList.add("show");
@@ -80,36 +102,46 @@ function updateKeyboard() {
 
   const vv = window.visualViewport;
 
-  // tinggi keyboard = selisih viewport
-  keyboardHeight = window.innerHeight - vv.height - vv.offsetTop;
+  keyboardOffset = window.innerHeight - vv.height - vv.offsetTop;
 
-  if (keyboardHeight < 0) keyboardHeight = 0;
+  if (keyboardOffset < 0) keyboardOffset = 0;
 
-  // geser bar ke atas keyboard
-  fakeBar.style.transform = `translateY(-${keyboardHeight}px)`;
+  fakeBar.style.transform = `translateY(-${keyboardOffset}px)`;
 }
 
 /* =========================
-   EVENTS
+   EVENTS FOR INPUT
 ========================= */
 ta.addEventListener("focus", showBar);
 ta.addEventListener("click", showBar);
 ta.addEventListener("input", showBar);
-
 ta.addEventListener("blur", hideBar);
 
 /* =========================
-   LISTEN KEYBOARD RESIZE
+   SCROLL BUTTON
+========================= */
+scrollBtn.addEventListener("click", () => {
+  window.scrollTo({
+    top: ta.offsetTop - 100,
+    behavior: "smooth"
+  });
+
+  setTimeout(() => {
+    ta.focus();
+    showBar();
+  }, 500);
+});
+
+/* =========================
+   KEYBOARD LISTENER
 ========================= */
 if (window.visualViewport) {
   visualViewport.addEventListener("resize", updateKeyboard);
   visualViewport.addEventListener("scroll", updateKeyboard);
 }
 
-/* fallback */
 window.addEventListener("resize", updateKeyboard);
 
-/* init */
 updateKeyboard();
 </script>
 
