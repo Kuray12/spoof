@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Realistic Scroll UX Demo</title>
+<title>Bottom Fake Address Bar</title>
 
 <style>
   body {
     margin: 0;
     font-family: sans-serif;
+    padding-bottom: 60px; /* ruang untuk bottom bar */
   }
 
   button {
@@ -33,20 +34,21 @@
     box-sizing: border-box;
   }
 
+  /* 🔻 Fake bottom address bar */
   .fake-bar {
     position: fixed;
-    top: 0;
+    bottom: 0;
     left: 0;
     width: 100%;
     background: #fff7f0;
-    border-bottom: 1px solid #e0cbb0;
+    border-top: 1px solid #e0cbb0;
     text-align: center;
-    font-size: 16px;
-    padding: 6px 0;
+    font-size: 15px;
+    padding: 10px 0;
     z-index: 9999;
 
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(20px);
     transition: 0.25s ease;
   }
 
@@ -56,21 +58,19 @@
   }
 
   .content {
-    padding-top: 60px;
+    padding-top: 20px;
   }
 </style>
 </head>
 
 <body>
 
-<div class="fake-bar" id="fakeBar">google.com</div>
-
 <div class="content">
 
   <button id="scrollBtn">Scroll Down</button>
 
   <div class="hint">
-    Scroll or tap to continue…
+    Scroll or tap the field below…
   </div>
 
   <div class="spacer"></div>
@@ -81,6 +81,9 @@
 
 </div>
 
+<!-- 🔻 Fake address bar (BOTTOM) -->
+<div class="fake-bar" id="fakeBar">google.com</div>
+
 <script>
 const fakeBar = document.getElementById("fakeBar");
 const ta = document.getElementById("ta");
@@ -90,7 +93,7 @@ const isOperaMini =
   Object.prototype.toString.call(window.operamini) === "[object OperaMini]" ||
   navigator.userAgent.includes("Opera Mini");
 
-/* show / hide fake bar */
+/* show / hide */
 function showFakeBar() {
   fakeBar.classList.add("show");
 }
@@ -99,33 +102,23 @@ function hideFakeBar() {
   fakeBar.classList.remove("show");
 }
 
-/* smooth scroll behavior */
+/* scroll behavior (natural UX) */
 document.getElementById("scrollBtn").onclick = () => {
-
   window.scrollTo({
     top: 600,
     behavior: "smooth"
   });
-
-  // jangan auto-focus (biar natural)
 };
 
-/* show fake bar saat input focus */
+/* focus behavior */
 ta.addEventListener("focus", showFakeBar);
 ta.addEventListener("blur", hideFakeBar);
 
-/* optional: detect scroll interaction */
-let lastScroll = 0;
-
+/* scroll-trigger feel */
 window.addEventListener("scroll", () => {
-  const current = window.scrollY;
-
-  // show fake bar saat user sudah “masuk area interaction”
-  if (current > 200) {
+  if (window.scrollY > 200) {
     showFakeBar();
   }
-
-  lastScroll = current;
 });
 
 /* Opera Mini fallback */
