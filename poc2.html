@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fake Mini URL Bar Demo</title>
+<title>Scroll Fullscreen Simulation</title>
 
 <style>
   body { margin: 0; font-family: sans-serif; }
 
-  button { padding: 12px 18px; font-size: 16px; margin: 10px; }
+  button {
+    padding: 12px 18px;
+    font-size: 16px;
+    margin: 10px;
+  }
 
   textarea {
     width: 100%;
@@ -38,20 +42,8 @@
     visibility: visible;
   }
 
-  /* fallback Opera Mini */
-  .fake-bar.fallback {
-    position: absolute;
-    bottom: 0;
-  }
+  .spacer { height: 900px; }
 
-  .spacer { height: 800px; }
-  .spacer-bottom { height: 1200px; }
-
-  .bottom-text {
-    font-size: 20px;
-    text-align: center;
-    margin: 20px;
-  }
 </style>
 </head>
 
@@ -65,25 +57,19 @@
 
 <div class="spacer"></div>
 
-<textarea id="middleTa" placeholder="Textarea in the middle…"></textarea>
-
-<div class="spacer-bottom"></div>
-
-<div class="bottom-text">
-  🎉 You finally scrolled down and found this text! 🎉
-</div>
+<textarea id="middleTa" placeholder="Textarea in middle…"></textarea>
 
 <script>
 const fakeBar = document.getElementById('fakeBar');
 const ta = document.getElementById('ta');
 const middleTa = document.getElementById('middleTa');
 
-/* 🔍 Detect Opera Mini */
+/* detect Opera Mini */
 const isOperaMini =
   Object.prototype.toString.call(window.operamini) === "[object OperaMini]" ||
   navigator.userAgent.includes("Opera Mini");
 
-/* 📏 Adjust fake bar */
+/* adjust fake bar */
 function adjustFakeBar() {
   if (isOperaMini) {
     fakeBar.style.bottom = "0px";
@@ -91,66 +77,55 @@ function adjustFakeBar() {
   }
 
   const vv = window.visualViewport;
-  let keyboardHeight = 0;
+  if (!vv) return;
 
-  if (vv) {
-    keyboardHeight = window.innerHeight - vv.height - vv.offsetTop;
-  }
-
-  fakeBar.style.bottom = keyboardHeight + 'px';
+  const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop;
+  fakeBar.style.bottom = keyboardHeight + "px";
 }
 
-/* 👀 Show / hide */
+/* show / hide */
 function showFakeBar() {
-  fakeBar.classList.add('show');
+  fakeBar.classList.add("show");
   adjustFakeBar();
 }
 
 function hideFakeBar() {
-  fakeBar.classList.remove('show');
+  fakeBar.classList.remove("show");
 }
 
-/* 📱 Button click */
-document.getElementById("showBtn").onclick = async () => {
+/* 🎯 main behavior (scroll-based) */
+document.getElementById("showBtn").onclick = () => {
 
   if (isOperaMini) {
-    // ✅ FALLBACK MODE
-    fakeBar.classList.add('fallback');
-    ta.focus();           // harus langsung dari klik
+    // fallback sederhana
+    ta.focus();
     showFakeBar();
     return;
   }
 
-  // ✅ NORMAL MODE (Chrome, dll)
-  ta.focus();
+  // scroll untuk “hide URL bar”
+  window.scrollTo({
+    top: 600,
+    behavior: "smooth"
+  });
 
-  try {
-    await document.documentElement.requestFullscreen();
-
-    setTimeout(() => {
-      document.exitFullscreen().catch(() => {});
-    }, 2000);
-
-  } catch (e) {}
-
-  setTimeout(async () => {
-    if (navigator.virtualKeyboard?.show) {
-      try { await navigator.virtualKeyboard.show(); } catch(e){}
-    }
+  // setelah scroll, fokus
+  setTimeout(() => {
+    ta.focus();
     showFakeBar();
-  }, 150);
+  }, 300);
 };
 
-/* ✍️ Focus events */
-ta.addEventListener('focus', showFakeBar);
-middleTa.addEventListener('focus', showFakeBar);
+/* focus events */
+ta.addEventListener("focus", showFakeBar);
+middleTa.addEventListener("focus", showFakeBar);
 
-ta.addEventListener('blur', hideFakeBar);
-middleTa.addEventListener('blur', hideFakeBar);
+ta.addEventListener("blur", hideFakeBar);
+middleTa.addEventListener("blur", hideFakeBar);
 
-/* 🔄 Resize (only non Opera Mini) */
-if (!isOperaMini && 'visualViewport' in window) {
-  window.visualViewport.addEventListener('resize', () => {
+/* viewport resize */
+if (!isOperaMini && window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => {
     if (
       document.activeElement === ta ||
       document.activeElement === middleTa
@@ -160,15 +135,8 @@ if (!isOperaMini && 'visualViewport' in window) {
   });
 }
 
-/* 📐 Orientation */
-window.addEventListener('orientationchange', adjustFakeBar);
-
-/* 🧩 Extra fallback (biar tetap nempel bawah saat scroll) */
-if (isOperaMini) {
-  window.addEventListener('scroll', () => {
-    fakeBar.style.bottom = "0px";
-  });
-}
+/* orientation */
+window.addEventListener("orientationchange", adjustFakeBar);
 </script>
 
 </body>
