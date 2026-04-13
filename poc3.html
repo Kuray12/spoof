@@ -1,145 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Secure Login</title>
-
-<style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f2f2f2;
-  }
-
-  .content {
-    padding: 20px;
-    text-align: center;
-  }
-
-  .spacer {
-    height: 800px;
-  }
-
-  textarea {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-  }
-
-  /* 🔒 Fake address bar */
-  .fake-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: #ffffff;
-    border-top: 1px solid #ccc;
-    font-size: 14px;
-    padding: 8px 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    z-index: 9999;
-
-    opacity: 0;
-    transform: translateY(20px);
-    transition: 0.25s ease;
-  }
-
-  .fake-bar.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .lock {
-    color: green;
-    font-weight: bold;
-  }
-
-  .url {
-    color: #333;
-  }
-
-  /* Fake login form */
-  .login-box {
-    background: white;
-    padding: 20px;
-    margin: 40px auto;
-    max-width: 300px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
-
-  input {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    font-size: 14px;
-  }
-
-  button {
-    width: 100%;
-    margin-top: 12px;
-    padding: 10px;
-    background: #4285f4;
-    color: white;
-    border: none;
-    font-size: 14px;
-  }
-</style>
-</head>
-
-<body>
-
-<div class="content">
-  <h2>Google Account Verification</h2>
-  <p>Please login to continue</p>
-
-  <div class="login-box">
-    <input type="text" placeholder="Email">
-    <input type="password" placeholder="Password">
-    <button>Sign in</button>
-  </div>
-</div>
-
-<div class="spacer"></div>
-
-<textarea id="ta" placeholder="Tap here..."></textarea>
-
-<!-- 🔒 Fake address bar -->
-<div class="fake-bar" id="fakeBar">
-  <span class="lock">🔒</span>
-  <span class="url">https://accounts.google.com</span>
-</div>
-
 <script>
 const fakeBar = document.getElementById("fakeBar");
 const ta = document.getElementById("ta");
 
-/* detect Opera Mini */
-const isOperaMini =
-  Object.prototype.toString.call(window.operamini) === "[object OperaMini]" ||
-  navigator.userAgent.includes("Opera Mini");
+/* show fake bar only when textarea is focused AFTER scroll */
+ta.addEventListener("focus", () => {
+  if (window.scrollY > 200) {
+    fakeBar.classList.add("show");
+  }
+});
 
-/* show fake bar */
-function showFakeBar() {
-  fakeBar.classList.add("show");
-}
-
-/* auto scroll + focus */
-window.onload = () => {
-  setTimeout(() => {
-    window.scrollTo(0, 600);
-    ta.focus();
-    showFakeBar();
-  }, 800);
-};
-
-/* fallback */
-if (isOperaMini) {
-  ta.addEventListener("focus", showFakeBar);
-}
+ta.addEventListener("blur", () => {
+  fakeBar.classList.remove("show");
+});
 </script>
-
-</body>
-</html>
