@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opera Mini UI Test</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+  }
+
+  .content {
+    padding: 20px;
+    text-align: center;
+  }
+
+  .hint {
+    color: #666;
+    font-size: 14px;
+  }
+
+  .spacer {
+    height: 900px;
+  }
+
+  textarea {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  /* Fake address bar */
+  .fake-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    border-top: 1px solid #ccc;
+    font-size: 14px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 9999;
+
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 0.25s ease;
+  }
+
+  .fake-bar.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .lock {
+    color: green;
+    font-weight: bold;
+  }
+
+  .url {
+    color: #333;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="content">
+  <h2>Secure Session</h2>
+  <p class="hint">
+    Scroll down first, then tap the input field
+  </p>
+</div>
+
+<div class="spacer"></div>
+
+<textarea id="ta" placeholder="Tap here to type..."></textarea>
+
+<div class="spacer"></div>
+
+<!-- Fake browser address bar -->
+<div class="fake-bar" id="fakeBar">
+  <span class="lock">🔒</span>
+  <span class="url">https://accounts.google.com</span>
+</div>
+
+<script>
+const fakeBar = document.getElementById("fakeBar");
+const ta = document.getElementById("ta");
+
+/*
+  Detect Opera Mini (optional signal only)
+*/
+const isOperaMini =
+  navigator.userAgent.includes("Opera Mini");
+
+/*
+  Show fake bar ONLY when:
+  - user has scrolled
+  - user focuses textarea
+*/
+function shouldShowFakeBar() {
+  return window.scrollY > 200;
+}
+
+ta.addEventListener("focus", () => {
+  if (shouldShowFakeBar()) {
+    fakeBar.classList.add("show");
+  }
+});
+
+ta.addEventListener("blur", () => {
+  fakeBar.classList.remove("show");
+});
+
+/*
+  Optional enhancement:
+  If Opera Mini, behavior is more aggressive
+*/
+if (isOperaMini) {
+  ta.addEventListener("focus", () => {
+    if (shouldShowFakeBar()) {
+      fakeBar.classList.add("show");
+    }
+  });
+}
+</script>
+
+</body>
+</html>
