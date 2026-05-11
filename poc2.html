@@ -1,113 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Chromium Download Classification Test</title>
+<html>
+<body style="font-family:Arial;padding:40px">
 
-  <style>
-    body{
-      background:#121212;
-      color:#eee;
-      font-family:Arial;
-      padding:40px;
-    }
+<h2>Camera Permission Race Test</h2>
 
-    .box{
-      max-width:700px;
-      background:#1e1e1e;
-      padding:20px;
-      border-radius:10px;
-    }
-
-    button{
-      padding:12px 18px;
-      margin-top:10px;
-      cursor:pointer;
-      font-size:15px;
-    }
-
-    code{
-      background:#333;
-      padding:2px 6px;
-      border-radius:4px;
-    }
-  </style>
-</head>
-<body>
-
-<div class="box">
-
-<h2>Download Classification Research</h2>
-
-<p>
-Testing how Chromium handles mismatch between:
-</p>
-
-<ul>
-  <li>MIME type</li>
-  <li>file extension</li>
-  <li>UI icon classification</li>
-</ul>
-
-<hr>
-
-<button onclick="test1()">Test 1: Image MIME + EXE extension</button>
-<button onclick="test2()">Test 2: Text MIME + PDF extension</button>
-<button onclick="test3()">Test 3: Video MIME + SCR extension</button>
-
-</div>
+<button onclick="startFlow()">Start Test</button>
 
 <script>
 
-function download(content, mime, filename){
+function startFlow() {
 
-  const blob = new Blob([content], { type: mime });
+  console.log("Step 1: user gesture captured");
 
-  const url = URL.createObjectURL(blob);
+  // simulate redirect delay
+  setTimeout(() => {
 
-  const a = document.createElement("a");
+    console.log("Step 2: after async delay");
 
-  a.href = url;
-  a.download = filename;
+    tryCamera();
 
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-
-  URL.revokeObjectURL(url);
+  }, 1000);
 }
 
-/*
-  CORE TEST CASES
-*/
+function tryCamera() {
 
-function test1(){
+  console.log("Step 3: requesting camera");
 
-  download(
-    "image test content",
-    "image/png",
-    "profile_picture.png.exe"
-  );
-
-}
-
-function test2(){
-
-  download(
-    "document test content",
-    "text/plain",
-    "report.pdf.exe"
-  );
-
-}
-
-function test3(){
-
-  download(
-    "video test content",
-    "video/mp4",
-    "holiday_video.scr"
-  );
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+      console.log("Camera granted");
+    })
+    .catch(err => {
+      console.log("Camera blocked:", err);
+    });
 
 }
 
