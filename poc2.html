@@ -1,124 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Smart Fake Address Bar</title>
+  <meta charset="UTF-8" />
+  <title>Filename Spoof Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #111;
+      color: #eee;
+    }
 
-<style>
-  body {
-    margin: 0;
-    font-family: sans-serif;
-    padding-bottom: 60px; /* ruang bottom bar */
-  }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
-  button {
-    padding: 12px 18px;
-    font-size: 16px;
-    margin: 12px;
-  }
-
-  .hint {
-    text-align: center;
-    color: #666;
-    margin-top: 20px;
-  }
-
-  .spacer {
-    height: 900px;
-  }
-
-  textarea {
-    width: 100%;
-    font-size: 18px;
-    padding: 12px;
-    box-sizing: border-box;
-  }
-
-  /* 🔻 Fake bottom address bar */
-  .fake-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: #fff7f0;
-    border-top: 1px solid #e0cbb0;
-    text-align: center;
-    font-size: 15px;
-    padding: 10px 0;
-    z-index: 9999;
-
-    opacity: 0;
-    transform: translateY(20px);
-    transition: 0.25s ease;
-  }
-
-  .fake-bar.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
-</style>
+    code {
+      background: #222;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
 </head>
-
 <body>
 
-<button id="scrollBtn">Scroll Down</button>
+  <h2>Unicode BiDi Filename Demo</h2>
 
-<div class="hint">
-  Scroll down, then tap the text area
-</div>
+  <p>
+    Demo karakter <code>U+202E</code> (Right-To-Left Override)
+    untuk riset UI spoofing.
+  </p>
 
-<div class="spacer"></div>
+  <button id="downloadBtn">
+    Download Demo File
+  </button>
 
-<textarea id="ta" placeholder="Tap here to type..."></textarea>
+  <script>
+    function downloadSpoofFile() {
 
-<div class="spacer"></div>
+      // Sample harmless content
+      const content = "Educational filename spoofing demo.";
 
-<!-- 🔻 Fake address bar -->
-<div class="fake-bar" id="fakeBar">google.com</div>
+      const blob = new Blob(
+        [content],
+        { type: "application/octet-stream" }
+      );
 
-<script>
-const fakeBar = document.getElementById("fakeBar");
-const ta = document.getElementById("ta");
+      const url = URL.createObjectURL(blob);
 
-/* detect Opera Mini */
-const isOperaMini =
-  Object.prototype.toString.call(window.operamini) === "[object OperaMini]" ||
-  navigator.userAgent.includes("Opera Mini");
+      // Unicode Right-To-Left Override
+      const rlo = "\u202E";
 
-/* show / hide */
-function showFakeBar() {
-  fakeBar.classList.add("show");
-}
+      /*
+        Raw filename:
+        report‮gpj.exe
 
-function hideFakeBar() {
-  fakeBar.classList.remove("show");
-}
+        Bisa terlihat misleading pada UI tertentu
+      */
+      const fakeName = "report" + rlo + "gpj.exe";
 
-/* scroll hanya visual */
-document.getElementById("scrollBtn").onclick = () => {
-  window.scrollTo({
-    top: 600,
-    behavior: "smooth"
-  });
-};
+      const a = document.createElement("a");
 
-/* 🔥 IMPORTANT: fake bar hanya muncul saat textarea fokus */
-ta.addEventListener("focus", () => {
-  showFakeBar();
-});
+      a.href = url;
+      a.download = fakeName;
 
-ta.addEventListener("blur", () => {
-  hideFakeBar();
-});
+      document.body.appendChild(a);
 
-/* fallback Opera Mini */
-if (isOperaMini) {
-  document.getElementById("scrollBtn").onclick = () => {
-    ta.focus();
-    showFakeBar();
-  };
-}
-</script>
+      a.click();
+
+      document.body.removeChild(a);
+
+      URL.revokeObjectURL(url);
+
+      console.log("Raw filename:", fakeName);
+    }
+
+    document
+      .getElementById("downloadBtn")
+      .addEventListener("click", downloadSpoofFile);
+  </script>
 
 </body>
 </html>
