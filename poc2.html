@@ -2,33 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Icon Mismatch Research Demo</title>
+  <title>Chromium Download Classification Test</title>
 
   <style>
     body{
-      background:#0f0f0f;
-      color:#fff;
+      background:#121212;
+      color:#eee;
       font-family:Arial;
       padding:40px;
     }
 
-    button{
-      padding:14px 22px;
-      font-size:16px;
-      cursor:pointer;
-      border:none;
-      border-radius:8px;
-    }
-
     .box{
-      background:#1b1b1b;
+      max-width:700px;
+      background:#1e1e1e;
       padding:20px;
       border-radius:10px;
-      max-width:700px;
+    }
+
+    button{
+      padding:12px 18px;
+      margin-top:10px;
+      cursor:pointer;
+      font-size:15px;
     }
 
     code{
-      background:#222;
+      background:#333;
       padding:2px 6px;
       border-radius:4px;
     }
@@ -38,89 +37,79 @@
 
 <div class="box">
 
-  <h1>Download UI Research Demo</h1>
+<h2>Download Classification Research</h2>
 
-  <p>
-    Testing:
-  </p>
+<p>
+Testing how Chromium handles mismatch between:
+</p>
 
-  <ul>
-    <li>Filename rendering</li>
-    <li>Unicode BiDi handling</li>
-    <li>Icon classification</li>
-    <li>MIME vs extension mismatch</li>
-  </ul>
+<ul>
+  <li>MIME type</li>
+  <li>file extension</li>
+  <li>UI icon classification</li>
+</ul>
 
-  <p>
-    File content is harmless plain text.
-  </p>
+<hr>
 
-  <button id="btn">
-    Download Test File
-  </button>
+<button onclick="test1()">Test 1: Image MIME + EXE extension</button>
+<button onclick="test2()">Test 2: Text MIME + PDF extension</button>
+<button onclick="test3()">Test 3: Video MIME + SCR extension</button>
 
 </div>
 
 <script>
 
-function runDemo() {
+function download(content, mime, filename){
 
-  // harmless content
-  const payload =
-`This is a harmless research file.
-
-Used for:
-- icon rendering tests
-- filename spoof tests
-- MIME mismatch tests`;
-
-  /*
-    MIME intentionally set to image/png
-    while filename uses .exe extension
-  */
-  const blob = new Blob(
-    [payload],
-    {
-      type: "image/png"
-    }
-  );
+  const blob = new Blob([content], { type: mime });
 
   const url = URL.createObjectURL(blob);
-
-  // Unicode RLO
-  const rlo = "\u202E";
-
-  /*
-    Raw:
-    Holiday_Photo_2025‮gnp.exe
-
-    Some buggy UIs may render oddly
-  */
-  const filename =
-    "Holiday_Photo_2025_" +
-    rlo +
-    "gnp.exe";
 
   const a = document.createElement("a");
 
   a.href = url;
-
   a.download = filename;
 
   document.body.appendChild(a);
-
   a.click();
-
-  document.body.removeChild(a);
+  a.remove();
 
   URL.revokeObjectURL(url);
-
-  console.log("Downloaded filename:", filename);
 }
 
-document
-  .getElementById("btn")
-  .addEventListener("click", runDemo);
+/*
+  CORE TEST CASES
+*/
+
+function test1(){
+
+  download(
+    "image test content",
+    "image/png",
+    "profile_picture.png.exe"
+  );
+
+}
+
+function test2(){
+
+  download(
+    "document test content",
+    "text/plain",
+    "report.pdf.exe"
+  );
+
+}
+
+function test3(){
+
+  download(
+    "video test content",
+    "video/mp4",
+    "holiday_video.scr"
+  );
+
+}
 
 </script>
 
