@@ -1,86 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Filename Spoof Demo</title>
+  <meta charset="UTF-8">
+  <title>Icon Mismatch Research Demo</title>
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 40px;
-      background: #111;
-      color: #eee;
+    body{
+      background:#0f0f0f;
+      color:#fff;
+      font-family:Arial;
+      padding:40px;
     }
 
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      cursor: pointer;
+    button{
+      padding:14px 22px;
+      font-size:16px;
+      cursor:pointer;
+      border:none;
+      border-radius:8px;
     }
 
-    code {
-      background: #222;
-      padding: 2px 6px;
-      border-radius: 4px;
+    .box{
+      background:#1b1b1b;
+      padding:20px;
+      border-radius:10px;
+      max-width:700px;
+    }
+
+    code{
+      background:#222;
+      padding:2px 6px;
+      border-radius:4px;
     }
   </style>
 </head>
 <body>
 
-  <h2>Unicode BiDi Filename Demo</h2>
+<div class="box">
+
+  <h1>Download UI Research Demo</h1>
 
   <p>
-    Demo karakter <code>U+202E</code> (Right-To-Left Override)
-    untuk riset UI spoofing.
+    Testing:
   </p>
 
-  <button id="downloadBtn">
-    Download Demo File
+  <ul>
+    <li>Filename rendering</li>
+    <li>Unicode BiDi handling</li>
+    <li>Icon classification</li>
+    <li>MIME vs extension mismatch</li>
+  </ul>
+
+  <p>
+    File content is harmless plain text.
+  </p>
+
+  <button id="btn">
+    Download Test File
   </button>
 
-  <script>
-    function downloadSpoofFile() {
+</div>
 
-      // Sample harmless content
-      const content = "Educational filename spoofing demo.";
+<script>
 
-      const blob = new Blob(
-        [content],
-        { type: "application/octet-stream" }
-      );
+function runDemo() {
 
-      const url = URL.createObjectURL(blob);
+  // harmless content
+  const payload =
+`This is a harmless research file.
 
-      // Unicode Right-To-Left Override
-      const rlo = "\u202E";
+Used for:
+- icon rendering tests
+- filename spoof tests
+- MIME mismatch tests`;
 
-      /*
-        Raw filename:
-        report‮gpj.exe
-
-        Bisa terlihat misleading pada UI tertentu
-      */
-      const fakeName = "report" + rlo + "gpj.exe";
-
-      const a = document.createElement("a");
-
-      a.href = url;
-      a.download = fakeName;
-
-      document.body.appendChild(a);
-
-      a.click();
-
-      document.body.removeChild(a);
-
-      URL.revokeObjectURL(url);
-
-      console.log("Raw filename:", fakeName);
+  /*
+    MIME intentionally set to image/png
+    while filename uses .exe extension
+  */
+  const blob = new Blob(
+    [payload],
+    {
+      type: "image/png"
     }
+  );
 
-    document
-      .getElementById("downloadBtn")
-      .addEventListener("click", downloadSpoofFile);
-  </script>
+  const url = URL.createObjectURL(blob);
+
+  // Unicode RLO
+  const rlo = "\u202E";
+
+  /*
+    Raw:
+    Holiday_Photo_2025‮gnp.exe
+
+    Some buggy UIs may render oddly
+  */
+  const filename =
+    "Holiday_Photo_2025_" +
+    rlo +
+    "gnp.exe";
+
+  const a = document.createElement("a");
+
+  a.href = url;
+
+  a.download = filename;
+
+  document.body.appendChild(a);
+
+  a.click();
+
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+
+  console.log("Downloaded filename:", filename);
+}
+
+document
+  .getElementById("btn")
+  .addEventListener("click", runDemo);
+
+</script>
 
 </body>
 </html>
